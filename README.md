@@ -1,53 +1,78 @@
 # 紫金甄选商城
 
-紫金甄选商城是一个基于 Java 17 和 Spring Cloud 的前后端分离微服务商城，包含商品、用户、购物车、订单、支付、秒杀、后台管理和智能导购 Agent。
+紫金甄选商城是一个基于 Java 17 和 Spring Cloud 构建的前后端分离微服务商城。
 
-商城服务使用 Spring Boot 3.0.5，智能导购 Agent 使用独立的 Spring Boot 3.5.15 与 Spring AI 1.1.8，二者通过 HTTP、RabbitMQ 和脱敏 DTO 交互。
+项目包含商品、用户、购物车、订单、支付、秒杀和后台管理等常见电商模块，并提供独立的智能导购服务，支持商品检索、个人订单工具、MCP 接入和写操作确认。
 
-## 1. 核心能力
+商城业务服务基于 Spring Boot 3.0.5，智能导购服务基于 Spring Boot 3.5.15 和 Spring AI 1.1.8。两套服务通过 HTTP、RabbitMQ 以及脱敏 DTO 进行交互。
 
-- Spring Cloud Gateway、Nacos 和 OpenFeign 微服务治理
-- MySQL 条件扣库存、库存预占和订单幂等
-- RabbitMQ、Outbox、消费日志和补偿任务实现最终一致性
-- Redis Hash 购物车与 Lua 原子清理
-- Redis Lua、RabbitMQ 和 MySQL 唯一约束实现秒杀
-- DeepSeek Tool Calling、Ollama Embedding 和 PGVector 混合检索
-- 只读 MCP Server、Agent 写操作确认和幂等执行
-- OpenTelemetry、Prometheus、Tempo 和 Grafana 可观测性
+## 功能概览
 
-## 2. 模块与端口
+* 使用 Spring Cloud Gateway、Nacos 和 OpenFeign 完成服务治理
+* 使用 MySQL 条件更新、库存预占和幂等控制处理库存与订单
+* 使用 RabbitMQ、Outbox、消费日志和补偿任务保证最终一致性
+* 使用 Redis Hash 存储购物车，并通过 Lua 脚本原子清理已下单商品
+* 使用 Redis Lua、RabbitMQ 和 MySQL 唯一约束实现秒杀链路
+* 支持 DeepSeek Tool Calling、Ollama Embedding 和 PGVector 混合检索
+* 提供只读 MCP Server，以及需要用户确认的 Agent 写操作
+* 接入 OpenTelemetry、Prometheus、Tempo 和 Grafana
 
-| 模块 | 端口 | 说明 |
-| --- | ---: | --- |
-| `zjzx-server-gateway` | 8500 | 商城统一 API 网关 |
-| `zjzx-manager` | 8501 | 后台管理接口 |
-| `service-product` | 8511 | 商品、库存与秒杀活动 |
-| `service-user` | 8512 | 用户、地址和地区数据 |
-| `service-cart` | 8513 | Redis 购物车 |
-| `service-order` | 8514 | 订单、超时关单与秒杀订单 |
-| `service-pay` | 8515 | 支付回调与支付事件 |
-| `zjzx-agent-service` | 8520 | 智能导购、RAG、MCP 与个人工具 |
+## 服务说明
 
-业务服务默认绑定 `127.0.0.1`。请只对外开放网关端口；`8511-8515` 和 Agent 内部接口不应直接暴露到公网。
+| 模块                    |   端口 | 说明                 |
+| --------------------- | ---: | ------------------ |
+| `zjzx-server-gateway` | 8500 | 商城统一 API 网关        |
+| `zjzx-manager`        | 8501 | 后台管理接口             |
+| `service-product`     | 8511 | 商品、库存和秒杀活动         |
+| `service-user`        | 8512 | 用户、地址和地区数据         |
+| `service-cart`        | 8513 | Redis 购物车          |
+| `service-order`       | 8514 | 普通订单、超时关单和秒杀订单     |
+| `service-pay`         | 8515 | 支付回调和支付事件          |
+| `zjzx-agent-service`  | 8520 | 智能导购、RAG、MCP 和个人工具 |
 
-## 3. 环境要求
+业务服务默认绑定到 `127.0.0.1`。
 
-- JDK 17
-- Maven 3.8+
-- Docker Desktop 或等价的容器运行时
-- MySQL 8.0.30
-- Redis 7.0.10
-- Nacos 2.2.2
-- RabbitMQ 4.3.2 Management
-- MinIO，只有文件上传功能需要
-- PostgreSQL 16 + PGVector 0.8.2，只有 Agent 向量检索需要
-- Ollama 0.32.3 + `bge-m3`，只有 Agent 向量检索需要
+部署到服务器时，只应对外开放网关端口。`8511` 至 `8515` 以及 Agent 内部接口不应直接暴露到公网。
 
-JMeter 5.6.3、Prometheus、Tempo 和 Grafana 仅用于性能测试和可观测性，不是商城最小启动依赖。
+## 环境要求
 
-## 4. 配置环境变量
+### 商城基础环境
 
-仓库不包含真实密码、API Key、支付密钥或服务器地址。以下示例适用于 PowerShell，请将尖括号内容替换为自己的本地配置。
+* JDK 17
+* Maven 3.8+
+* Docker Desktop 或其他兼容的容器运行时
+* MySQL 8.0.30
+* Redis 7.0.10
+* Nacos 2.2.2
+* RabbitMQ 4.3.2 Management
+
+### 可选组件
+
+以下组件不是商城最小启动依赖：
+
+* MinIO：用于头像和商品图片上传
+* PostgreSQL 16 与 PGVector 0.8.2：用于 Agent 向量检索
+* Ollama 0.32.3 与 `bge-m3`：用于生成商品向量
+* JMeter 5.6.3：用于性能测试
+* Prometheus、Tempo 和 Grafana：用于监控和链路追踪
+
+## 快速启动顺序
+
+首次启动建议按以下顺序操作：
+
+1. 配置环境变量
+2. 启动 MySQL、Redis、Nacos 和 RabbitMQ
+3. 准备基础数据库并执行增量脚本
+4. 编译项目
+5. 启动商品、用户、购物车、订单和支付服务
+6. 启动网关和后台管理服务
+7. 按需启动 MinIO、Agent 和可观测性组件
+
+## 配置环境变量
+
+仓库不包含真实密码、API Key、支付密钥或服务器地址。
+
+以下示例适用于 PowerShell。请将尖括号中的内容替换为本地配置。
 
 ```powershell
 # MySQL
@@ -72,7 +97,8 @@ $env:RABBITMQ_USERNAME = "<rabbitmq-user>"
 $env:RABBITMQ_PASSWORD = "<rabbitmq-password>"
 $env:RABBITMQ_VHOST = "/"
 
-# 服务间认证，所有后端服务必须使用同一个高强度随机值
+# 服务间认证
+# 所有后端服务必须使用同一个值，建议至少包含 32 个随机字符
 $env:ZJZX_INTERNAL_API_TOKEN = "<at-least-32-random-characters>"
 
 # MinIO
@@ -83,17 +109,21 @@ $env:MINIO_BUCKET = "zjzx-bucket"
 $env:DEFAULT_AVATAR_URL = "http://127.0.0.1:9000/zjzx-bucket/defaultIcon.png"
 ```
 
-环境变量只对当前 PowerShell 窗口有效。使用 IDEA 启动时，应把同一组变量加入每个 Spring Boot 运行配置，或者写入不提交到 Git 的本地配置文件。
+PowerShell 中设置的环境变量只对当前窗口有效。
 
-## 5. 启动基础设施
+使用 IDEA 启动服务时，需要将同一组环境变量加入各个 Spring Boot 运行配置。也可以写入本地配置文件，但该文件不能提交到 Git。
 
-先创建项目网络：
+## 启动基础设施
+
+### 创建 Docker 网络
 
 ```powershell
 docker network create zjzx-net
 ```
 
-### 5.1 MySQL
+如果网络已经存在，Docker 会提示冲突，可以忽略该步骤。
+
+### MySQL
 
 ```powershell
 docker run -d --name zjzx-mysql --network zjzx-net `
@@ -105,7 +135,7 @@ docker run -d --name zjzx-mysql --network zjzx-net `
   --restart unless-stopped mysql:8.0.30
 ```
 
-### 5.2 Redis
+### Redis
 
 ```powershell
 docker run -d --name zjzx-redis --network zjzx-net `
@@ -115,7 +145,7 @@ docker run -d --name zjzx-redis --network zjzx-net `
   redis-server --appendonly yes --requirepass $env:REDIS_PASSWORD
 ```
 
-### 5.3 Nacos
+### Nacos
 
 ```powershell
 docker run -d --name zjzx-nacos --network zjzx-net `
@@ -125,22 +155,35 @@ docker run -d --name zjzx-nacos --network zjzx-net `
   --restart unless-stopped nacos/nacos-server:v2.2.2
 ```
 
-项目的 Nacos 配置导入是可选的，本地数据库、Redis 和 RabbitMQ 配置直接从环境变量读取。Nacos 主要用于服务注册与发现。
+本地环境通常不需要导入额外的 Nacos 配置。
 
-### 5.4 RabbitMQ
+数据库、Redis 和 RabbitMQ 配置直接从环境变量读取，Nacos 主要用于服务注册和发现。
 
-先拉取镜像，再运行仓库脚本。脚本会读取环境变量，缺失时安全提示输入账号和密码。
+### RabbitMQ
+
+先拉取镜像：
 
 ```powershell
 docker pull rabbitmq:4.3.2-management
+```
+
+再运行仓库中的部署脚本：
+
+```powershell
 .\scripts\docker\deploy-rabbitmq.ps1
 ```
 
-管理页面为 `http://127.0.0.1:15672`。
+脚本会优先读取环境变量。缺少账号或密码时，会提示在终端中输入。
 
-### 5.5 MinIO（可选）
+RabbitMQ 管理页面：
 
-后台上传头像和商品图片时才需要 MinIO。请创建 `zjzx-bucket`，并仅为图片对象配置公开读取权限，不要公开写入、删除或列举权限。
+```text
+http://127.0.0.1:15672
+```
+
+### MinIO
+
+MinIO 仅在使用头像或商品图片上传功能时需要。
 
 ```powershell
 docker run -d --name zjzx-minio --network zjzx-net `
@@ -152,11 +195,24 @@ docker run -d --name zjzx-minio --network zjzx-net `
   --restart unless-stopped minio/minio server /data --console-address ":9001"
 ```
 
-## 6. 初始化数据库
+启动后创建名为 `zjzx-bucket` 的 Bucket。
 
-仓库中的 `docs/sql` 主要是项目升级过程的增量脚本，不包含原始演示商品、地区和后台菜单数据。首次运行前需要先准备基础 `db_zjzx` 结构和数据，再按实际数据库状态执行增量脚本。
+如需在前端直接访问图片，只开放图片对象的匿名读取权限。不要开放匿名上传、删除或对象列表权限。
 
-全新升级环境推荐检查以下脚本：
+## 初始化数据库
+
+`docs/sql` 目录保存的是项目升级过程中使用的增量脚本，不包含完整的初始数据库。
+
+首次运行前，需要自行准备以下基础数据：
+
+* `db_zjzx` 数据库结构
+* 演示商品数据
+* 地区数据
+* 后台菜单和权限数据
+
+准备好基础数据库后，再根据当前数据库状态执行增量脚本。
+
+全新升级环境建议依次检查：
 
 1. `docs/sql/20260721_bcrypt_password.sql`
 2. `docs/sql/20260711_inventory_reservation.sql`
@@ -165,9 +221,13 @@ docker run -d --name zjzx-minio --network zjzx-net `
 5. `docs/sql/20260723_seckill_v1.sql`
 6. `docs/sql/20260722_schema_integrity_check.sql`
 
-`20260722_*_repair.sql` 用于修复已经部分升级的数据库，不应在不了解现有结构时全部重复执行。完整性检查结果中的 `FAIL` 和 `SKIPPED` 必须处理后再启动订单与秒杀服务。
+名称中包含 `20260722_*_repair.sql` 的脚本用于修复已经部分升级的数据库。
 
-## 7. 编译项目
+不要在不了解现有表结构的情况下批量执行所有修复脚本，否则可能造成重复字段、重复索引或数据覆盖。
+
+执行完整性检查后，结果中的 `FAIL` 和 `SKIPPED` 必须处理。数据库结构不完整时，不应启动订单和秒杀服务。
+
+## 编译与测试
 
 在仓库根目录执行：
 
@@ -181,9 +241,9 @@ mvn -DskipTests package
 mvn test
 ```
 
-## 8. 启动商城服务
+## 启动商城服务
 
-推荐使用 IDEA 分别启动以下主类：
+推荐在 IDEA 中分别启动以下主类：
 
 1. `ProductApplication8511`
 2. `UserApplication8512`
@@ -193,9 +253,13 @@ mvn test
 6. `GatewayApplication8500`
 7. `ManagerApplication8501`
 
-也可以在编译后使用对应模块的 Spring Boot Jar 启动。所有进程必须继承第 4 节配置的环境变量。
+也可以先执行 Maven 打包，再使用各模块生成的 Spring Boot Jar 启动。
 
-启动后检查：
+所有进程都必须继承前面配置的环境变量，特别是数据库、Redis、RabbitMQ 和 `ZJZX_INTERNAL_API_TOKEN`。
+
+### 健康检查
+
+服务启动后，访问以下地址检查运行状态：
 
 ```text
 http://127.0.0.1:8511/actuator/health
@@ -206,103 +270,181 @@ http://127.0.0.1:8515/actuator/health
 http://127.0.0.1:8500/actuator/health
 ```
 
-前端商城 API BaseURL 指向 `http://127.0.0.1:8500`，后台管理前端指向 `http://127.0.0.1:8501`。
+### 前端接口地址
 
-## 9. 启动智能导购 Agent（可选）
+商城前端 API BaseURL：
 
-### 9.1 部署 PGVector 和 Ollama
+```text
+http://127.0.0.1:8500
+```
+
+后台管理前端 API BaseURL：
+
+```text
+http://127.0.0.1:8501
+```
+
+## 启动智能导购服务
+
+智能导购服务是可选模块。只运行商城基础功能时，可以跳过本节。
+
+### 部署 PGVector 和 Ollama
+
+配置 PostgreSQL 账号：
 
 ```powershell
 $env:AGENT_PGVECTOR_USERNAME = "zjzx_agent"
 $env:AGENT_PGVECTOR_PASSWORD = "<postgres-password>"
+```
 
+部署 PGVector：
+
+```powershell
 docker pull pgvector/pgvector:0.8.2-pg16-bookworm
 .\scripts\docker\deploy-pgvector.ps1
+```
 
+部署 Ollama Embedding：
+
+```powershell
 docker pull ollama/ollama:0.32.3
 .\scripts\docker\deploy-ollama-embedding.ps1
 ```
 
-对 `zjzx_agent` PostgreSQL 数据库执行：
+在 `zjzx_agent` PostgreSQL 数据库中执行：
 
 1. `docs/sql/20260728_agent_product_index_mq.sql`
 2. `docs/sql/20260729_agent_action_request.sql`
 3. `docs/sql/20260729_agent_action_cancel_order.sql`
 
-### 9.2 配置 Agent
+### 配置 Agent
 
 ```powershell
 $env:AGENT_PGVECTOR_URL = "jdbc:postgresql://127.0.0.1:5432/zjzx_agent"
+
 $env:SPRING_AI_MODEL_EMBEDDING = "ollama"
 $env:SPRING_AI_VECTORSTORE_TYPE = "pgvector"
 $env:AGENT_VECTOR_ENABLED = "true"
+
 $env:OLLAMA_BASE_URL = "http://127.0.0.1:11434"
 $env:OLLAMA_EMBEDDING_MODEL = "bge-m3"
+```
 
-# DeepSeek 对话，可不配置；不配置时 Agent 使用确定性检索模式
+配置 DeepSeek 对话模型：
+
+```powershell
 $env:SPRING_AI_MODEL_CHAT = "openai"
 $env:DEEPSEEK_API_KEY = "<your-deepseek-api-key>"
 $env:DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 $env:DEEPSEEK_MODEL = "deepseek-v4-flash"
+```
 
-# 增量索引和个人工具
+DeepSeek 配置不是必需项。未配置对话模型时，Agent 会使用确定性检索模式。
+
+启用商品增量索引和个人工具：
+
+```powershell
 $env:AGENT_PRODUCT_INDEX_MQ_ENABLED = "true"
 $env:AGENT_PRODUCT_INDEX_RECONCILIATION_ENABLED = "true"
 $env:AGENT_PERSONAL_TOOLS_ENABLED = "true"
 $env:AGENT_PERSONAL_ACTIONS_ENABLED = "true"
 ```
 
-首次启动向量库时设置：
+### 初始化向量库
+
+首次启动时设置：
 
 ```powershell
 $env:AGENT_PGVECTOR_INITIALIZE_SCHEMA = "true"
 $env:AGENT_PGVECTOR_SCHEMA_VALIDATION = "false"
 ```
 
-表创建成功后，后续启动改为：
+确认表结构创建成功后，后续启动改为：
 
 ```powershell
 $env:AGENT_PGVECTOR_INITIALIZE_SCHEMA = "false"
 $env:AGENT_PGVECTOR_SCHEMA_VALIDATION = "true"
 ```
 
-启动 `GuideAgentApplication8520`，然后检查 `http://127.0.0.1:8520/actuator/health`。
+启动主类：
 
-全量构建商品向量索引：
+```text
+GuideAgentApplication8520
+```
+
+健康检查地址：
+
+```text
+http://127.0.0.1:8520/actuator/health
+```
+
+### 构建商品向量索引
+
+首次启用向量检索，或需要重新生成全部商品索引时，调用内部接口：
 
 ```http
 POST http://127.0.0.1:8520/api/agent/internal/index/products/rebuild
-X-Internal-Token: <与后端服务一致的内部 Token>
+X-Internal-Token: <与后端服务相同的内部 Token>
 ```
 
-### 9.3 MCP Server（可选）
+该接口属于内部管理接口，不应直接暴露到公网。
+
+## MCP Server
+
+MCP Server 是 Agent 的可选功能，默认不通过商城网关暴露。
+
+配置环境变量：
 
 ```powershell
 $env:AGENT_MCP_ENABLED = "true"
 $env:AGENT_MCP_API_KEY = "<at-least-32-random-characters>"
 ```
 
-MCP 端点为 `http://127.0.0.1:8520/mcp`，不会通过网关暴露。验证脚本：
+本地端点：
+
+```text
+http://127.0.0.1:8520/mcp
+```
+
+执行冒烟测试：
 
 ```powershell
 .\scripts\mcp\mcp-smoke.ps1
+```
+
+执行负向测试：
+
+```powershell
 .\scripts\mcp\mcp-negativeTest.ps1 -Suite All
 ```
 
-## 10. 可观测性（可选）
+## 可观测性
+
+配置 Grafana 管理员密码：
 
 ```powershell
 $env:GRAFANA_ADMIN_PASSWORD = "<grafana-password>"
+```
+
+启动可观测性组件：
+
+```powershell
 .\scripts\docker\deploy-observability.ps1 -Pull
 ```
 
-- Grafana：`http://127.0.0.1:3000`
-- Prometheus：`http://127.0.0.1:9090`
-- Tempo：`http://127.0.0.1:3200`
+访问地址：
 
-## 11. 支付与短信配置（可选）
+| 组件         | 地址                      |
+| ---------- | ----------------------- |
+| Grafana    | `http://127.0.0.1:3000` |
+| Prometheus | `http://127.0.0.1:9090` |
+| Tempo      | `http://127.0.0.1:3200` |
 
-支付服务源码不再包含支付宝密钥。启用支付前配置：
+## 支付配置
+
+支付服务源码不包含支付宝密钥。
+
+启用支付宝支付前，需要配置：
 
 ```powershell
 $env:ALIPAY_APP_ID = "<alipay-app-id>"
@@ -312,7 +454,15 @@ $env:ALIPAY_RETURN_URL = "<frontend-payment-result-url>"
 $env:ALIPAY_NOTIFY_URL = "<public-alipay-callback-url>"
 ```
 
-短信验证码服务不再包含 AppCode、签名或模板标识。启用短信前配置：
+`ALIPAY_NOTIFY_URL` 必须是支付宝服务器能够访问的公网 HTTPS 地址。
+
+支付回调需要校验签名，并结合业务订单状态进行幂等处理。不能仅根据前端跳转结果修改订单支付状态。
+
+## 短信配置
+
+短信验证码服务不包含 AppCode、签名或模板标识。
+
+启用短信功能前，需要配置：
 
 ```powershell
 $env:SMS_APP_CODE = "<sms-app-code>"
@@ -320,20 +470,33 @@ $env:SMS_SIGN_ID = "<sms-sign-id>"
 $env:SMS_TEMPLATE_ID = "<sms-template-id>"
 ```
 
-## 12. 安全说明
+## 部署与安全注意事项
 
-- 不要提交 `.env`、IDE 运行配置、JMeter 用户 CSV、日志或数据库备份。
-- 不要把 `ZJZX_INTERNAL_API_TOKEN`、`AGENT_MCP_API_KEY` 或用户 Token 放入前端。
-- MinIO Bucket 最多开放匿名读对象权限，禁止匿名上传和删除。
-- 公开仓库前必须轮换曾经写入 Git 的支付宝、短信、数据库、Redis、MinIO 和模型服务凭据。
-- 仅删除当前文件中的秘密不会清除 Git 历史。建议从脱敏后的工作树创建全新的公开仓库，或在确认备份后使用专用工具清理历史，再将仓库改为 Public。
+* 不要提交 `.env`、IDE 运行配置、JMeter 用户 CSV、运行日志或数据库备份。
+* 不要将 `ZJZX_INTERNAL_API_TOKEN`、`AGENT_MCP_API_KEY` 或用户 Token 写入前端代码。
+* 不要将支付密钥、短信凭据、数据库密码或模型 API Key 写入仓库。
+* MinIO Bucket 最多开放匿名读取对象权限，禁止匿名上传、删除和列举。
+* 生产环境只对外开放网关、管理端入口以及必要的回调地址。
+* MySQL、Redis、Nacos、RabbitMQ、MinIO、PGVector 和 Agent 内部端口不应直接暴露到公网。
+* 对外发布仓库前，应轮换所有曾经写入 Git 的凭据。
+* 删除当前文件中的密钥不会清除 Git 历史。
+* 如仓库中曾经提交过真实凭据，建议从脱敏后的工作树创建新的公开仓库。
+* 需要保留原仓库历史时，应先完成备份，再使用专用工具清理历史记录，并重新轮换全部凭据。
 
-## 13. 相关文档
+更完整的部署边界说明见：
 
-- 商城前端接口：`docs/frontend-api.md`
-- 管理端接口：`docs/manager-api.md`
-- RabbitMQ 一致性设计：`docs/rabbitmq-v1.md`
-- 秒杀测试：`docs/seckill-test-guide.md`
-- Agent 迭代文档：`docs/agent-iteration-0.md` 至 `docs/agent-iteration-7-3-order-cancellation.md`
-- JMeter 压测方案：`docs/jmeter-performance-test.md`
-- 部署安全边界：`docs/deployment-security.md`
+```text
+docs/deployment-security.md
+```
+
+## 相关文档
+
+| 文档                                                                             | 说明               |
+| ------------------------------------------------------------------------------ | ---------------- |
+| `docs/frontend-api.md`                                                         | 商城前端接口           |
+| `docs/manager-api.md`                                                          | 后台管理接口           |
+| `docs/rabbitmq-v1.md`                                                          | RabbitMQ 最终一致性设计 |
+| `docs/seckill-test-guide.md`                                                   | 秒杀测试说明           |
+| `docs/agent-iteration-0.md` 至 `docs/agent-iteration-7-3-order-cancellation.md` | Agent 迭代记录       |
+| `docs/jmeter-performance-test.md`                                              | JMeter 压测方案      |
+| `docs/deployment-security.md`                                                  | 部署安全边界           |
