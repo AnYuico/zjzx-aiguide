@@ -1,0 +1,54 @@
+server:
+  address: "${SERVICE_BIND_ADDRESS:127.0.0.1}"
+  port: 8512
+
+spring:
+  cloud:
+    nacos:
+      config:
+        import-check:
+          enabled: false
+      discovery:
+        ip: "${SERVICE_DISCOVERY_IP:127.0.0.1}"
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+  datasource:
+    hikari:
+      max-lifetime: 1800000
+      idle-timeout: 600000
+      maximum-pool-size: 10
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:db_zjzx}?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true"
+    username: "${MYSQL_USERNAME:root}"
+    password: "${MYSQL_PASSWORD}"
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD}"
+
+mybatis:
+  config-location: classpath:mybatis-config.xml
+  mapper-locations: classpath:mapper/*/*.xml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: "${spring.application.name}"
+
+zjzx:
+  internal-api:
+    token: "${ZJZX_INTERNAL_API_TOKEN}"
+  user:
+    default-avatar-url: "${DEFAULT_AVATAR_URL:http://127.0.0.1:9000/zjzx-bucket/defaultIcon.png}"
+  test-data:
+    enabled: "${ZJZX_TEST_DATA_ENABLED:false}"
+    api-key: "${ZJZX_TEST_DATA_API_KEY:}"
+    max-batch-size: "${ZJZX_TEST_DATA_MAX_BATCH_SIZE:100}"

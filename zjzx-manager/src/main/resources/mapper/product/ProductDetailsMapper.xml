@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.manager.mapper.ProductDetailsMapper">
+
+    <resultMap id="productDetailsMap" type="com.tzp.zjzx.model.entity.product.ProductDetails" autoMapping="true"/>
+
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+        id,product_id,image_urls,create_time,update_time,is_deleted
+    </sql>
+
+    <!-- 1. 添加商品详情-->
+    <insert id="save" keyProperty="id" useGeneratedKeys="true">
+        insert into product_details (
+            id,
+            product_id,
+            image_urls,
+            create_time,update_time,is_deleted
+        ) values (
+                     #{id},
+                     #{productId},
+                     #{imageUrls},
+                     now(),
+                     now(),
+                     0
+                 )
+    </insert>
+
+    <!-- 2.根据商品id查询详情-->
+    <select id="findProductDetailsById" resultMap="productDetailsMap">
+        select <include refid="columns" />
+        from product_details
+        where
+        product_id = #{productId}
+    </select>
+
+    <!-- 3.根据id修改详情-->
+    <update id="updateById">
+        update product_details set
+        <if test="productId != null and productId != ''">
+            product_id = #{productId},
+        </if>
+        <if test="imageUrls != null and imageUrls != ''">
+            image_urls = #{imageUrls},
+        </if>
+        update_time =  now()
+        where
+        id = #{id}
+    </update>
+
+    <!-- 4.根据id删除详情-->
+    <update id="deleteByProductId">
+        update product_details set
+           update_time = now() ,
+           is_deleted = 1
+        where
+            product_id = #{productId}
+    </update>
+
+</mapper>

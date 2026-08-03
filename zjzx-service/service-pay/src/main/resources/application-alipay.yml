@@ -1,0 +1,8 @@
+zjzx:
+  alipay:
+    alipay_url: "${ALIPAY_GATEWAY_URL:https://openapi.alipay.com/gateway.do}"
+    app_id: "${ALIPAY_APP_ID:}"
+    app_private_key: "${ALIPAY_APP_PRIVATE_KEY:}"
+    alipay_public_key: "${ALIPAY_PUBLIC_KEY:}"
+    return_payment_url: "${ALIPAY_RETURN_URL:http://localhost:8080/#/pages/money/paySuccess}"
+    notify_payment_url: "${ALIPAY_NOTIFY_URL:http://localhost:8500/api/order/alipay/callback/notify}"

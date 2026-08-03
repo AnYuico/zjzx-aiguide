@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.order.mapper.SeckillOrderRequestMapper">
+
+    <resultMap id="requestMap"
+               type="com.tzp.zjzx.model.entity.seckill.SeckillOrderRequest"
+               autoMapping="true"/>
+
+    <sql id="columns">
+        id, request_id, activity_id, seckill_sku_id, sku_id,
+        user_id, user_address_id, order_no, order_id, status,
+        retry_count, next_retry_time, fail_reason, stock_returned,
+        create_time, update_time, is_deleted
+    </sql>
+
+    <insert id="insertIgnore">
+        insert ignore into seckill_order_request (
+            request_id, activity_id, seckill_sku_id, sku_id,
+            user_id, user_address_id, order_no, status,
+            retry_count, next_retry_time, stock_returned,
+            create_time, update_time, is_deleted
+        ) values (
+            #{requestId}, #{activityId}, #{seckillSkuId}, #{skuId},
+            #{userId}, #{userAddressId}, #{orderNo}, #{status},
+            0, now(), 0, now(), now(), 0
+        )
+    </insert>
+
+    <select id="selectByRequestId" resultMap="requestMap">
+        select <include refid="columns"/>
+        from seckill_order_request
+        where request_id = #{requestId}
+          and is_deleted = 0
+    </select>
+
+    <select id="selectByOrderNo" resultMap="requestMap">
+        select <include refid="columns"/>
+        from seckill_order_request
+        where order_no = #{orderNo}
+          and is_deleted = 0
+    </select>
+
+    <select id="selectByUserSku" resultMap="requestMap">
+        select <include refid="columns"/>
+        from seckill_order_request
+        where activity_id = #{activityId}
+          and user_id = #{userId}
+          and sku_id = #{skuId}
+          and is_deleted = 0
+    </select>
+
+    <update id="markProcessing">
+        update seckill_order_request
+        set status = 1, update_time = now()
+        where request_id = #{requestId}
+          and status = 0
+          and next_retry_time &lt;= now()
+          and is_deleted = 0
+    </update>
+
+    <update id="markSuccess">
+        update seckill_order_request
+        set status = 2,
+            order_id = #{orderId},
+            fail_reason = null,
+            update_time = now()
+        where request_id = #{requestId}
+          and status = 1
+          and is_deleted = 0
+    </update>
+
+    <update id="markRetry">
+        update seckill_order_request
+        set status = 0,
+            retry_count = #{retryCount},
+            next_retry_time = #{nextRetryTime},
+            fail_reason = #{failReason},
+            update_time = now()
+        where request_id = #{requestId}
+          and status = 1
+          and is_deleted = 0
+    </update>
+
+    <update id="markFailed">
+        update seckill_order_request
+        set status = 3,
+            fail_reason = #{failReason},
+            update_time = now()
+        where request_id = #{requestId}
+          and status in (0, 1)
+          and is_deleted = 0
+    </update>
+
+    <update id="markStockReturned">
+        update seckill_order_request
+        set stock_returned = 1,
+            update_time = now()
+        where request_id = #{requestId}
+          and status = #{expectedStatus}
+          and stock_returned = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="markCancelled">
+        update seckill_order_request
+        set status = 4,
+            fail_reason = 'ORDER_CANCELLED',
+            update_time = now()
+        where order_no = #{orderNo}
+          and status = 2
+          and stock_returned = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="resetStaleProcessing">
+        update seckill_order_request
+        set status = 0,
+            next_retry_time = now(),
+            update_time = now()
+        where status = 1
+          and update_time &lt; #{staleBefore}
+          and is_deleted = 0
+    </update>
+
+    <select id="findRetryable" resultMap="requestMap">
+        select <include refid="columns"/>
+        from seckill_order_request
+        where status = 0
+          and next_retry_time &lt;= now()
+          and is_deleted = 0
+        order by next_retry_time, id
+        limit #{limit}
+    </select>
+
+    <select id="findFailedWithoutRollback" resultMap="requestMap">
+        select <include refid="columns"/>
+        from seckill_order_request
+        where status = 3
+          and stock_returned = 0
+          and is_deleted = 0
+        order by update_time, id
+        limit #{limit}
+    </select>
+
+    <select id="findReleasedOrdersWithoutReturn" resultMap="requestMap">
+        select r.id, r.request_id, r.activity_id, r.seckill_sku_id, r.sku_id,
+               r.user_id, r.user_address_id, r.order_no, r.order_id, r.status,
+               r.retry_count, r.next_retry_time, r.fail_reason, r.stock_returned,
+               r.create_time, r.update_time, r.is_deleted
+        from seckill_order_request r
+        inner join order_info o
+                on o.order_no = r.order_no
+               and o.order_status = -1
+               and o.is_deleted = 0
+        inner join inventory_request i
+                on i.order_no = r.order_no
+               and i.status = 3
+               and i.is_deleted = 0
+        where r.status in (2, 4)
+          and r.stock_returned = 0
+          and r.is_deleted = 0
+        order by r.update_time, r.id
+        limit #{limit}
+    </select>
+</mapper>

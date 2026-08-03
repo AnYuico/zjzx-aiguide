@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: service-product
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+        import-check:
+          enabled: false
+  config:
+    import:
+      - optional:nacos:service-product-dev.yml

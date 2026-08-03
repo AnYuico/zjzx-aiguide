@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.manager.mapper.OrderInfoMapper">
+
+    <!-- 统计前一天的交易金额-->
+    <select id="selectStatisticsByDate" resultType="com.tzp.zjzx.model.entity.order.OrderStatistics">
+        SELECT DATE(o.payment_time) AS orderDate,
+               SUM(o.total_amount) AS totalAmount,
+               COUNT(o.id) AS totalNum
+        FROM order_info o
+        WHERE o.order_status &gt; 0
+          AND o.payment_time &gt;= CONCAT(#{createDate}, ' 00:00:00')
+          AND o.payment_time &lt; DATE_ADD(#{createDate}, INTERVAL 1 DAY)
+          AND o.is_deleted = 0
+        GROUP BY DATE(o.payment_time)
+    </select>
+
+
+</mapper>

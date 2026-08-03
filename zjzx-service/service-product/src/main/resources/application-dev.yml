@@ -1,0 +1,82 @@
+server:
+  address: "${SERVICE_BIND_ADDRESS:127.0.0.1}"
+  port: 8511
+
+spring:
+  cloud:
+    nacos:
+      config:
+        import-check:
+          enabled: false
+      discovery:
+        ip: "${SERVICE_DISCOVERY_IP:127.0.0.1}"
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:db_zjzx}?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true"
+    username: "${MYSQL_USERNAME:root}"
+    password: "${MYSQL_PASSWORD}"
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD}"
+  rabbitmq:
+    host: "${RABBITMQ_HOST:127.0.0.1}"
+    port: "${RABBITMQ_PORT:5672}"
+    username: "${RABBITMQ_USERNAME}"
+    password: "${RABBITMQ_PASSWORD}"
+    virtual-host: "${RABBITMQ_VHOST:/}"
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: 10
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          multiplier: 2
+          max-interval: 10s
+
+mybatis:
+  config-location: classpath:mybatis-config.xml
+  mapper-locations: classpath:/mapper/*/*.xml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: "${spring.application.name}"
+
+zjzx:
+  internal-api:
+    token: "${ZJZX_INTERNAL_API_TOKEN}"
+  mq:
+    outbox:
+      enabled: true
+  seckill:
+    result-retention-days: "${SECKILL_RESULT_RETENTION_DAYS:7}"
+    max-publish-attempts: "${SECKILL_MAX_PUBLISH_ATTEMPTS:20}"
+    publish-scan-delay-ms: "${SECKILL_PUBLISH_SCAN_DELAY_MS:5000}"
+    publish-scan-initial-delay-ms: "${SECKILL_PUBLISH_SCAN_INITIAL_DELAY_MS:15000}"
+    activity-scan-delay-ms: "${SECKILL_ACTIVITY_SCAN_DELAY_MS:10000}"
+    activity-scan-initial-delay-ms: "${SECKILL_ACTIVITY_SCAN_INITIAL_DELAY_MS:30000}"
+    ending-grace-ms: "${SECKILL_ENDING_GRACE_MS:300000}"
+    force-finish-grace-ms: "${SECKILL_FORCE_FINISH_GRACE_MS:1800000}"

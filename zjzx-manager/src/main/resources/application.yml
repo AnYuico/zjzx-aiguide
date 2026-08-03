@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: server-manager
+  profiles:
+    active: dev   #启用de环境
+  servlet:
+    multipart:
+      max-file-size: "${IMAGE_UPLOAD_MAX_SIZE:5MB}"
+      max-request-size: "${IMAGE_UPLOAD_MAX_REQUEST_SIZE:6MB}"
+
+zjzx:
+  upload:
+    image:
+      max-size: "${IMAGE_UPLOAD_MAX_SIZE:5MB}"
+      max-width: "${IMAGE_UPLOAD_MAX_WIDTH:8192}"
+      max-height: "${IMAGE_UPLOAD_MAX_HEIGHT:8192}"
+      max-pixels: "${IMAGE_UPLOAD_MAX_PIXELS:25000000}"

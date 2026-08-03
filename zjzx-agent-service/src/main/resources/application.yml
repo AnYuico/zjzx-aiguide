@@ -1,0 +1,210 @@
+server:
+  port: 8520
+  shutdown: graceful
+
+spring:
+  application:
+    name: zjzx-agent-service
+  http:
+    client:
+      connect-timeout: "${DEEPSEEK_HTTP_CONNECT_TIMEOUT:3s}"
+      read-timeout: "${DEEPSEEK_HTTP_READ_TIMEOUT:25s}"
+  datasource:
+    url: "${AGENT_PGVECTOR_URL:jdbc:postgresql://127.0.0.1:5432/zjzx_agent}"
+    username: "${AGENT_PGVECTOR_USERNAME:zjzx_agent}"
+    password: "${AGENT_PGVECTOR_PASSWORD:}"
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 0
+      connection-timeout: 2000
+  rabbitmq:
+    host: "${RABBITMQ_HOST:127.0.0.1}"
+    port: "${RABBITMQ_PORT:5672}"
+    username: "${RABBITMQ_USERNAME}"
+    password: "${RABBITMQ_PASSWORD}"
+    virtual-host: "${RABBITMQ_VHOST:/}"
+    listener:
+      simple:
+        acknowledge-mode: auto
+        concurrency: 1
+        max-concurrency: 1
+        prefetch: 4
+        observation-enabled: true
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          multiplier: 2
+          max-interval: 10s
+    template:
+      observation-enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  ai:
+    mcp:
+      server:
+        enabled: "${AGENT_MCP_ENABLED:false}"
+        protocol: STATELESS
+        type: ASYNC
+        name: zjzx-product-guide
+        version: 1.0.0
+        instructions: "Read-only product discovery tools with real-time catalog validation"
+        request-timeout: "${AGENT_MCP_REQUEST_TIMEOUT:10s}"
+        tool-callback-converter: false
+        annotation-scanner:
+          enabled: false
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+        streamable-http:
+          mcp-endpoint: "${AGENT_MCP_ENDPOINT:/mcp}"
+    retry:
+      max-attempts: 1
+      on-client-errors: false
+      backoff:
+        initial-interval: 500ms
+        multiplier: 2
+        max-interval: 2s
+    model:
+      chat: "${SPRING_AI_MODEL_CHAT:none}"
+      embedding: "${SPRING_AI_MODEL_EMBEDDING:none}"
+      image: none
+      moderation: none
+      audio:
+        transcription: none
+        speech: none
+    openai:
+      base-url: "${DEEPSEEK_BASE_URL:https://api.deepseek.com}"
+      api-key: "${DEEPSEEK_API_KEY:}"
+      chat:
+        options:
+          model: "${DEEPSEEK_MODEL:deepseek-v4-flash}"
+          max-tokens: "${DEEPSEEK_MAX_TOKENS:800}"
+          extra-body:
+            thinking:
+              type: disabled
+    ollama:
+      base-url: "${OLLAMA_BASE_URL:http://127.0.0.1:11434}"
+      embedding:
+        model: "${OLLAMA_EMBEDDING_MODEL:bge-m3}"
+        options:
+          keep-alive: "${OLLAMA_EMBEDDING_KEEP_ALIVE:30m}"
+      init:
+        pull-model-strategy: never
+    vectorstore:
+      type: "${SPRING_AI_VECTORSTORE_TYPE:none}"
+      pgvector:
+        initialize-schema: "${AGENT_PGVECTOR_INITIALIZE_SCHEMA:false}"
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        id-type: TEXT
+        schema-name: public
+        table-name: product_knowledge_vector
+        schema-validation: "${AGENT_PGVECTOR_SCHEMA_VALIDATION:false}"
+        max-document-batch-size: 100
+    chat:
+      client:
+        observations:
+          log-prompt: false
+          log-completion: false
+
+management:
+  health:
+    db:
+      enabled: "${AGENT_VECTOR_ENABLED:false}"
+    rabbit:
+      enabled: "${AGENT_PRODUCT_INDEX_MQ_ENABLED:false}"
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: "${spring.application.name}"
+      environment: "${OTEL_DEPLOYMENT_ENVIRONMENT:local}"
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        zjzx.agent.chat.duration: true
+  tracing:
+    sampling:
+      probability: "${OTEL_TRACES_SAMPLER_PROBABILITY:1.0}"
+  otlp:
+    tracing:
+      endpoint: "${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://127.0.0.1:4318/v1/traces}"
+      timeout: "${OTEL_EXPORT_TIMEOUT:5s}"
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 2
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      productCatalog:
+        base-config: default
+      deepSeek:
+        base-config: default
+  retry:
+    instances:
+      productCatalog:
+        max-attempts: 2
+        wait-duration: 150ms
+        enable-exponential-backoff: false
+  bulkhead:
+    instances:
+      deepSeek:
+        max-concurrent-calls: "${AGENT_MODEL_MAX_CONCURRENT_CALLS:4}"
+        max-wait-duration: 0
+
+zjzx:
+  agent:
+    mcp:
+      enabled: "${AGENT_MCP_ENABLED:false}"
+      endpoint: "${AGENT_MCP_ENDPOINT:/mcp}"
+      api-key: "${AGENT_MCP_API_KEY:}"
+    product-guide:
+      base-url: "${PRODUCT_GUIDE_BASE_URL:http://127.0.0.1:8511}"
+      internal-token: "${ZJZX_INTERNAL_API_TOKEN:}"
+      request-timeout: "${PRODUCT_GUIDE_REQUEST_TIMEOUT:2s}"
+    ai:
+      model-name: "${DEEPSEEK_MODEL:deepseek-v4-flash}"
+      response-timeout: "${DEEPSEEK_RESPONSE_TIMEOUT:60s}"
+      tool-timeout: "${DEEPSEEK_TOOL_TIMEOUT:5s}"
+      fallback-limit: "${DEEPSEEK_FALLBACK_LIMIT:5}"
+    personal-tools:
+      enabled: "${AGENT_PERSONAL_TOOLS_ENABLED:false}"
+      user-service-base-url: "${USER_SERVICE_BASE_URL:http://127.0.0.1:8512}"
+      cart-service-base-url: "${CART_SERVICE_BASE_URL:http://127.0.0.1:8513}"
+      order-service-base-url: "${ORDER_SERVICE_BASE_URL:http://127.0.0.1:8514}"
+      internal-token: "${ZJZX_INTERNAL_API_TOKEN:}"
+      request-timeout: "${AGENT_PERSONAL_TOOLS_REQUEST_TIMEOUT:2s}"
+      max-order-limit: "${AGENT_PERSONAL_TOOLS_MAX_ORDER_LIMIT:10}"
+      actions-enabled: "${AGENT_PERSONAL_ACTIONS_ENABLED:false}"
+      confirmation-ttl: "${AGENT_ACTION_CONFIRMATION_TTL:5m}"
+      execution-lease: "${AGENT_ACTION_EXECUTION_LEASE:30s}"
+      max-cart-quantity: "${AGENT_ACTION_MAX_CART_QUANTITY:10}"
+    retrieval:
+      vector-enabled: "${AGENT_VECTOR_ENABLED:false}"
+      hybrid-timeout: "${AGENT_VECTOR_TIMEOUT:8s}"
+      similarity-threshold: "${AGENT_VECTOR_SIMILARITY_THRESHOLD:0.55}"
+      vector-candidate-multiplier: "${AGENT_VECTOR_CANDIDATE_MULTIPLIER:3}"
+      index-page-size: "${AGENT_INDEX_PAGE_SIZE:100}"
+      max-index-documents: "${AGENT_MAX_INDEX_DOCUMENTS:10000}"
+    product-index-mq:
+      enabled: "${AGENT_PRODUCT_INDEX_MQ_ENABLED:false}"
+      reconciliation-enabled: "${AGENT_PRODUCT_INDEX_RECONCILIATION_ENABLED:false}"
+      reconciliation-initial-delay-ms: "${AGENT_PRODUCT_INDEX_RECONCILIATION_INITIAL_DELAY_MS:300000}"
+      reconciliation-fixed-delay-ms: "${AGENT_PRODUCT_INDEX_RECONCILIATION_FIXED_DELAY_MS:21600000}"
+      reconciliation-timeout: "${AGENT_PRODUCT_INDEX_RECONCILIATION_TIMEOUT:30m}"

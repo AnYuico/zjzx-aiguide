@@ -1,0 +1,84 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.157.0
+    container_name: zjzx-otel-collector
+    restart: unless-stopped
+    command:
+      - --config=/etc/otelcol-contrib/config.yml
+    volumes:
+      - ./otel-collector.yml:/etc/otelcol-contrib/config.yml:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:13133:13133"
+    mem_limit: 256m
+    depends_on:
+      - tempo
+    networks:
+      - zjzx-net
+
+  tempo:
+    image: grafana/tempo:2.10.5
+    container_name: zjzx-tempo
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/tempo.yml
+    volumes:
+      - ./tempo.yml:/etc/tempo.yml:ro
+      - zjzx-tempo-data:/var/tempo
+    ports:
+      - "127.0.0.1:3200:3200"
+    mem_limit: 512m
+    networks:
+      - zjzx-net
+
+  prometheus:
+    image: prom/prometheus:v3.13.0
+    container_name: zjzx-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - zjzx-prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    mem_limit: 512m
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - zjzx-net
+
+  grafana:
+    image: grafana/grafana:13.1.0
+    container_name: zjzx-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - zjzx-grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    mem_limit: 512m
+    depends_on:
+      - prometheus
+      - tempo
+    networks:
+      - zjzx-net
+
+volumes:
+  zjzx-tempo-data:
+  zjzx-prometheus-data:
+  zjzx-grafana-data:
+
+networks:
+  zjzx-net:
+    external: true

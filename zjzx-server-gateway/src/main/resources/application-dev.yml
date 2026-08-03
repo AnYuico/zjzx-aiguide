@@ -1,0 +1,103 @@
+server:
+  port: 8500
+
+spring:
+  application:
+    name: zjzx-server-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      loadbalancer:
+        cache:
+          enabled: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            # 允许请求中携带的头信息
+            allowedHeaders: "*"
+            # 允许浏览器脚本读取限流等待时间和链路追踪号
+            exposedHeaders:
+              - Retry-After
+              - X-Trace-Id
+            # 运行跨域的请求方式
+            allowedMethods: "*"
+            # 跨域检测的有效期,单位s
+            maxAge: 36000
+      routes:
+        - id: zjzx-agent-service
+          uri: "${ZJZX_AGENT_SERVICE_URL:http://127.0.0.1:8520}"
+          predicates:
+            - Path=/api/agent/**
+        - id: service-product
+          uri: lb://service-product
+          predicates:
+            - Path=/*/product/**
+        - id: service-user
+          uri: lb://service-user
+          predicates:
+              - Path=/*/user/**
+        - id: service-cart
+          uri: lb://service-cart
+          predicates:
+            - Path=/api/order/cart/**
+        - id: service-order
+          uri: lb://service-order
+          predicates:
+              - Path=/api/order/orderInfo/**
+        - id: service-pay
+          uri: lb://service-pay
+          predicates:
+            - Path=/api/order/alipay/**
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD}"
+      jedis:
+        pool:
+          max-active: 100
+          max-idle: 20
+          min-idle: 10
+          max-wait: 2000ms
+      timeout: 5000ms
+
+zjzx:
+  agent:
+    rate-limit:
+      user-per-minute: "${AGENT_USER_RATE_LIMIT:10}"
+      ip-per-minute: "${AGENT_IP_RATE_LIMIT:30}"
+      session-per-minute: "${AGENT_SESSION_RATE_LIMIT:15}"
+  seckill:
+    rate-limit:
+      ip-per-second: "${SECKILL_IP_RATE_LIMIT:20}"
+      user-per-second: "${SECKILL_USER_RATE_LIMIT:5}"
+      activity-per-second: "${SECKILL_ACTIVITY_RATE_LIMIT:200}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: "${spring.application.name}"
+      environment: "${OTEL_DEPLOYMENT_ENVIRONMENT:local}"
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: "${OTEL_TRACES_SAMPLER_PROBABILITY:1.0}"
+  otlp:
+    tracing:
+      endpoint: "${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://127.0.0.1:4318/v1/traces}"
+      timeout: "${OTEL_EXPORT_TIMEOUT:5s}"

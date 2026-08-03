@@ -1,0 +1,72 @@
+server:
+  port: 8501
+
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:db_zjzx}?characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai"
+    username: "${MYSQL_USERNAME:root}"
+    password: "${MYSQL_PASSWORD}"
+    hikari:
+      connection-timeout: 10000
+      validation-timeout: 3000
+      idle-timeout: 60000
+      login-timeout: 5
+      max-lifetime: 60000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      read-only: false
+
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD}"
+  rabbitmq:
+    host: "${RABBITMQ_HOST:127.0.0.1}"
+    port: "${RABBITMQ_PORT:5672}"
+    username: "${RABBITMQ_USERNAME}"
+    password: "${RABBITMQ_PASSWORD}"
+    virtual-host: "${RABBITMQ_VHOST:/}"
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: 10
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          multiplier: 2
+          max-interval: 10s
+
+mybatis:
+  mapper-locations: classpath:/mapper/*/*.xml
+  config-location: classpath:/mybatis-config.xml
+
+zjzx:
+  mq:
+    outbox:
+      enabled: true
+  internal-api:
+    token: "${ZJZX_INTERNAL_API_TOKEN}"
+  services:
+    product:
+      base-url: "${PRODUCT_SERVICE_BASE_URL:http://127.0.0.1:8511}"
+  auth:
+    noAuthUrls:
+      - /admin/system/index/login
+      - /admin/system/index/generateValidateCode
+  minio:
+    endpointUrl: "${MINIO_ENDPOINT:http://127.0.0.1:9000}"
+    accessKey: "${MINIO_ACCESS_KEY}"
+    secreKey: "${MINIO_SECRET_KEY}"
+    bucketName: "${MINIO_BUCKET:zjzx-bucket}"
+
+
+

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.order.mapper.InventoryOperationTaskMapper">
+
+    <resultMap id="inventoryOperationTaskMap"
+               type="com.tzp.zjzx.model.entity.order.InventoryOperationTask"
+               autoMapping="true"/>
+
+    <insert id="insertIgnore">
+        insert ignore into inventory_operation_task(
+            order_no, operation_type, status, retry_count, next_retry_time
+        ) values (
+            #{orderNo}, #{operationType}, 0, 0, #{nextRetryTime}
+        )
+    </insert>
+
+    <select id="findPending" resultMap="inventoryOperationTaskMap">
+        select id, order_no, operation_type, status, retry_count,
+               next_retry_time, last_error, create_time, update_time, is_deleted
+        from inventory_operation_task
+        where status = 0
+          and next_retry_time &lt;= now()
+          and is_deleted = 0
+        order by id
+        limit #{limit}
+    </select>
+
+    <update id="markSuccess">
+        update inventory_operation_task
+        set status = 1, update_time = now()
+        where order_no = #{orderNo}
+          and operation_type = #{operationType}
+          and status = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="markRetry">
+        update inventory_operation_task
+        set status = #{status},
+            retry_count = #{retryCount},
+            next_retry_time = #{nextRetryTime},
+            last_error = #{lastError},
+            update_time = now()
+        where id = #{id}
+          and status = 0
+          and is_deleted = 0
+    </update>
+</mapper>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.product.mapper.SeckillActivityMapper">
+
+    <resultMap id="seckillActivityMap"
+               type="com.tzp.zjzx.model.entity.seckill.SeckillActivity"
+               autoMapping="true"/>
+
+    <sql id="columns">
+        id, name, start_time, end_time, status,
+        create_time, update_time, is_deleted
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into seckill_activity (
+            name, start_time, end_time, status,
+            create_time, update_time, is_deleted
+        ) values (
+            #{name}, #{startTime}, #{endTime}, #{status},
+            now(), now(), 0
+        )
+    </insert>
+
+    <select id="selectById" resultMap="seckillActivityMap">
+        select <include refid="columns"/>
+        from seckill_activity
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <select id="findPublished" resultMap="seckillActivityMap">
+        select <include refid="columns"/>
+        from seckill_activity
+        where status = 2
+          and end_time &gt; now()
+          and is_deleted = 0
+        order by start_time, id
+    </select>
+
+    <select id="findAdmin"
+            resultType="com.tzp.zjzx.model.vo.seckill.SeckillActivityAdminVo">
+        select a.id,
+               a.name,
+               a.start_time,
+               a.end_time,
+               a.status,
+               a.create_time,
+               a.update_time,
+               (
+                   select count(1)
+                   from seckill_sku s
+                   where s.activity_id = a.id
+                     and s.is_deleted = 0
+               ) as sku_count
+        from seckill_activity a
+        where a.is_deleted = 0
+        <if test="status != null">
+            and a.status = #{status}
+        </if>
+        order by a.create_time desc, a.id desc
+    </select>
+
+    <select id="findEndingCandidates" resultMap="seckillActivityMap">
+        select <include refid="columns"/>
+        from seckill_activity
+        where (
+                status = 3
+                or (status in (1, 2) and end_time &lt;= now())
+              )
+          and is_deleted = 0
+        order by end_time, id
+        limit 100
+    </select>
+
+    <update id="updateDraft">
+        update seckill_activity
+        set name = #{name},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            update_time = now()
+        where id = #{id}
+          and status = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="updateStatus">
+        update seckill_activity
+        set status = #{targetStatus}, update_time = now()
+        where id = #{id}
+          and status = #{expectedStatus}
+          and is_deleted = 0
+    </update>
+</mapper>

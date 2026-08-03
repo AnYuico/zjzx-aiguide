@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.manager.mapper.CategoryBrandMapper">
+
+    <resultMap id="categoryBrandMap" type="com.tzp.zjzx.model.entity.product.CategoryBrand" autoMapping="true"/>
+
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+        id,brand_id,category_id,create_time,update_time,is_deleted
+    </sql>
+
+
+    <!-- 1.分类品牌的条件查询方法-->
+    <select id="findByPage" resultMap="categoryBrandMap">
+        SELECT cb.*,
+        c.name AS categoryName,
+        b.name AS brandName, b.logo
+        FROM category_brand cb
+        INNER JOIN category c ON c.id=cb.category_id
+        INNER JOIN brand b ON b.id=cb.brand_id
+        <where>
+            <if test="brandId != null and brandId != ''">
+                and cb.brand_id = #{brandId}
+            </if>
+            <if test="categoryId != null and categoryId != ''">
+                and cb.category_Id = #{categoryId}
+            </if>
+            and cb.is_deleted=0
+        </where>
+        order BY cb.id desc
+    </select>
+
+    <!-- 2.保存分类品牌-->
+    <insert id="save">
+        insert into category_brand (
+            id,
+            brand_id,
+            category_id,
+            create_time,
+            update_time ,
+            is_deleted
+        ) values (
+                     #{id},
+                     #{brandId},
+                     #{categoryId},
+                     now(),
+                     now(),
+                     0
+                 )
+    </insert>
+
+    <!-- 3.修改分类品牌-->
+    <update id="updateById">
+        update category_brand set
+        <if test="brandId != null and brandId != ''">
+            brand_id = #{brandId},
+        </if>
+        <if test="categoryId != null and categoryId != ''">
+            category_id = #{categoryId},
+        </if>
+        update_time =  now()
+        where
+        id = #{id}
+    </update>
+
+    <!-- 4.删除分类品牌-->
+    <update id="deleteById">
+        update category_brand set
+              update_time = now() ,
+              is_deleted = 1
+        where
+            id = #{id}
+    </update>
+
+    <!-- 5.根据分类id查询对应品牌数据-->
+    <select id="findBrandByCategoryId" resultType="com.tzp.zjzx.model.entity.product.Brand">
+        SELECT b.*
+        FROM category_brand cb
+            INNER JOIN brand b ON b.id=cb.brand_id
+        WHERE cb.category_id=#{categoryId} AND cb.is_deleted=0
+        ORDER BY cb.id DESC
+    </select>
+</mapper>

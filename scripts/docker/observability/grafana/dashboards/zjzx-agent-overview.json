@@ -1,0 +1,126 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": false,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}},
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"zjzx-agent-service\"}[1m]))",
+          "legendFormat": "Agent"
+        }
+      ],
+      "title": "Agent Request Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application=\"zjzx-agent-service\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "title": "Agent HTTP p95",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "percentunit"}},
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"zjzx-agent-service\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_server_requests_seconds_count{application=\"zjzx-agent-service\"}[5m])), 0.001)",
+          "legendFormat": "5xx ratio"
+        }
+      ],
+      "title": "Agent Error Ratio",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum by (outcome) (increase(zjzx_agent_chat_requests_total[15m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "title": "Chat Outcomes (15m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+      "id": 5,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, outcome) (rate(zjzx_agent_chat_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{outcome}} p95"
+        }
+      ],
+      "title": "Guide Chat Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+      "id": 6,
+      "targets": [
+        {
+          "expr": "resilience4j_circuitbreaker_state{name=~\"deepSeek|productCatalog\"}",
+          "legendFormat": "{{name}} {{state}}"
+        }
+      ],
+      "title": "Circuit Breaker State",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+      "id": 7,
+      "targets": [
+        {
+          "expr": "sum by (reason) (increase(zjzx_gateway_agent_rate_limit_rejections_total[15m]))",
+          "legendFormat": "{{reason}}"
+        }
+      ],
+      "title": "Gateway Rate Limit Rejections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+      "id": 8,
+      "targets": [
+        {
+          "expr": "increase(zjzx_agent_security_output_rejections_total[15m])",
+          "legendFormat": "unsafe output"
+        }
+      ],
+      "title": "Security Output Rejections",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 41,
+  "tags": ["zjzx", "agent", "otel"],
+  "templating": {"list": []},
+  "time": {"from": "now-30m", "to": "now"},
+  "timezone": "browser",
+  "title": "ZJZX Agent Overview",
+  "uid": "zjzx-agent-overview",
+  "version": 1
+}

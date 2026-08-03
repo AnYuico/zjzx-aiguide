@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.order.mapper.OrderSubmitRequestMapper">
+
+    <resultMap id="orderSubmitRequestMap" type="com.tzp.zjzx.model.entity.order.OrderSubmitRequest" autoMapping="true"/>
+
+    <insert id="insertIgnore" useGeneratedKeys="true" keyProperty="id">
+        insert ignore into order_submit_request(request_id, user_id, order_no, status)
+        values (#{requestId}, #{userId}, #{orderNo}, #{status})
+    </insert>
+
+    <select id="selectByRequestId" resultMap="orderSubmitRequestMap">
+        select id, request_id, user_id, order_no, status, order_id,
+               create_time, update_time, is_deleted
+        from order_submit_request
+        where request_id = #{requestId} and is_deleted = 0
+    </select>
+
+    <update id="markSuccess">
+        update order_submit_request
+        set status = 1, order_id = #{orderId}, update_time = now()
+        where request_id = #{requestId}
+          and user_id = #{userId}
+          and status = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="markFailed">
+        update order_submit_request
+        set status = 2, update_time = now()
+        where request_id = #{requestId}
+          and user_id = #{userId}
+          and status = 0
+          and is_deleted = 0
+    </update>
+</mapper>

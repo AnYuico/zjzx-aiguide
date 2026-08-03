@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="ZJZX Critical API Load Test" enabled="true">
+      <stringProp name="TestPlan.comments">Run one scenario at a time through Run-ZjzxJmeter.ps1. Assertions validate business responses, not only HTTP status.</stringProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+    </TestPlan>
+    <hashTree>
+      <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Per-user test data" enabled="true">
+        <stringProp name="delimiter">,</stringProp>
+        <stringProp name="fileEncoding">UTF-8</stringProp>
+        <stringProp name="filename">${__P(dataFile,scripts/jmeter/data/users.csv.example)}</stringProp>
+        <boolProp name="ignoreFirstLine">true</boolProp>
+        <boolProp name="quotedData">true</boolProp>
+        <boolProp name="recycle">true</boolProp>
+        <stringProp name="shareMode">shareMode.all</stringProp>
+        <boolProp name="stopThread">false</boolProp>
+        <stringProp name="variableNames">token,userAddressId,skuId,activityId,keyword</stringProp>
+      </CSVDataSet>
+      <hashTree/>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Scenario thread group" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">${__P(iterations,-1)}</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(rampSeconds,10)}</stringProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.duration">${__P(durationSeconds,60)}</stringProp>
+        <stringProp name="ThreadGroup.delay">0</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="Gateway HTTP defaults" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">${__P(host,127.0.0.1)}</stringProp>
+          <stringProp name="HTTPSampler.port">${__P(port,8500)}</stringProp>
+          <stringProp name="HTTPSampler.protocol">${__P(protocol,http)}</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <stringProp name="HTTPSampler.connect_timeout">${__P(connectTimeoutMs,3000)}</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">${__P(responseTimeoutMs,10000)}</stringProp>
+          <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
+        </ConfigTestElement>
+        <hashTree/>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP headers" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Accept</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">token</stringProp>
+              <stringProp name="Header.value">${token}</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="zjzx_scenario" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="Request body" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain"/>
+          <stringProp name="HTTPSampler.port"/>
+          <stringProp name="HTTPSampler.protocol"/>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <stringProp name="HTTPSampler.path">/</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"/>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Build scenario request" enabled="true">
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="filename"/>
+            <stringProp name="parameters"/>
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="script"><![CDATA[
+import groovy.json.JsonOutput
+import java.util.UUID
+
+def scenario = props.getProperty('scenario', 'product_list').trim()
+def protectedScenarios = [
+    'cart_read',
+    'order_list',
+    'checkout_trade',
+    'order_submit',
+    'seckill_submit',
+    'seckill_same_request',
+    'seckill_user_limit',
+    'mixed_read',
+    'agent_chat'
+] as Set
+
+def requiredText = { String name ->
+    def value = vars.get(name)
+    if (value == null || value.trim().isEmpty() || value.startsWith('REPLACE_')) {
+        throw new IllegalArgumentException("${name} is required for scenario ${scenario}")
+    }
+    value.trim()
+}
+
+def positiveLong = { String name ->
+    def raw = requiredText(name)
+    try {
+        def value = Long.parseLong(raw)
+        if (value <= 0) {
+            throw new NumberFormatException('not positive')
+        }
+        value
+    } catch (NumberFormatException exception) {
+        throw new IllegalArgumentException("${name} must be a positive integer")
+    }
+}
+
+if (protectedScenarios.contains(scenario)) {
+    requiredText('token')
+}
+
+def method = 'GET'
+def path = '/'
+def body = ''
+def responseMode = 'wrapped'
+def pageSize = Math.max(1, Math.min(50,
+    Integer.parseInt(props.getProperty('pageSize', '20'))))
+def skuNum = Math.max(1, Integer.parseInt(props.getProperty('skuNum', '1')))
+def orderSource = Integer.parseInt(props.getProperty('orderSource', '1'))
+if (orderSource != 1 && orderSource != 2) {
+    throw new IllegalArgumentException('orderSource must be 1 (cart) or 2 (buy now)')
+}
+def configuredKeyword = props.getProperty('keyword', '').trim()
+def runId = props.getProperty('runId', 'manual').trim()
+def csvKeyword = vars.get('keyword')
+def keyword = configuredKeyword
+if (keyword.isEmpty() && csvKeyword != null && !csvKeyword.startsWith('REPLACE_')) {
+    keyword = csvKeyword.trim()
+}
+if (keyword.isEmpty()) {
+    keyword = 'Mac mini'
+}
+
+switch (scenario) {
+    case 'product_list':
+        path = "/api/product/1/${pageSize}?order=1"
+        break
+    case 'product_detail':
+        path = "/api/product/item/${positiveLong('skuId')}"
+        break
+    case 'seckill_activity_list':
+        path = '/api/product/seckill/activities'
+        break
+    case 'cart_read':
+        path = '/api/order/cart/auth/cartList'
+        break
+    case 'order_list':
+        path = "/api/order/orderInfo/auth/1/${pageSize}"
+        break
+    case 'checkout_trade':
+        path = '/api/order/orderInfo/auth/trade'
+        break
+    case 'mixed_read':
+        def selector = java.util.concurrent.ThreadLocalRandom.current().nextInt(100)
+        if (selector < 35) {
+            path = "/api/product/1/${pageSize}?order=1"
+        } else if (selector < 50) {
+            path = "/api/product/item/${positiveLong('skuId')}"
+        } else if (selector < 65) {
+            path = '/api/product/seckill/activities'
+        } else if (selector < 85) {
+            path = '/api/order/cart/auth/cartList'
+        } else if (selector < 95) {
+            path = "/api/order/orderInfo/auth/1/${pageSize}"
+        } else {
+            path = '/api/order/orderInfo/auth/trade'
+        }
+        break
+    case 'agent_search':
+        method = 'POST'
+        path = '/api/agent/guide/search'
+        body = JsonOutput.toJson([keyword: keyword, limit: 10])
+        responseMode = 'agent_search'
+        break
+    case 'agent_chat':
+        method = 'POST'
+        path = '/api/agent/auth/guide/chat'
+        body = JsonOutput.toJson([message: keyword, limit: 5])
+        responseMode = 'agent_chat'
+        break
+    case 'order_submit':
+        method = 'POST'
+        path = '/api/order/orderInfo/auth/submitOrder'
+        def requestId = UUID.randomUUID().toString().replace('-', '')
+        vars.put('requestId', requestId)
+        body = JsonOutput.toJson([
+            requestId: requestId,
+            orderSource: orderSource,
+            userAddressId: positiveLong('userAddressId'),
+            feightFee: 0,
+            remark: "jmeter-load-test:${runId}",
+            orderItemList: [[
+                skuId: positiveLong('skuId'),
+                skuNum: skuNum
+            ]]
+        ])
+        break
+    case 'seckill_submit':
+    case 'seckill_same_request':
+    case 'seckill_user_limit':
+        method = 'POST'
+        def activityId = positiveLong('activityId')
+        def skuId = positiveLong('skuId')
+        path = "/api/product/seckill/auth/activity/${activityId}/sku/${skuId}/submit"
+        def fixedRequestId = props.getProperty('fixedRequestId', '').trim()
+        def requestId = scenario == 'seckill_same_request'
+            ? fixedRequestId
+            : "jmeter-${UUID.randomUUID().toString().replace('-', '')}"
+        if (scenario == 'seckill_same_request' && requestId.isEmpty()) {
+            throw new IllegalArgumentException(
+                'fixedRequestId is required for seckill_same_request')
+        }
+        vars.put('requestId', requestId)
+        body = JsonOutput.toJson([
+            requestId: requestId,
+            userAddressId: positiveLong('userAddressId')
+        ])
+        break
+    default:
+        throw new IllegalArgumentException("Unsupported scenario: ${scenario}")
+}
+
+sampler.setName("zjzx_${scenario}")
+sampler.setMethod(method)
+sampler.setPath(path)
+sampler.getArguments().removeAllArguments()
+if (!body.isEmpty()) {
+    sampler.addNonEncodedArgument('', body, '')
+    sampler.setPostBodyRaw(true)
+} else {
+    sampler.setPostBodyRaw(false)
+}
+vars.put('responseMode', responseMode)
+vars.put('scenarioName', scenario)
+]]></stringProp>
+          </JSR223PreProcessor>
+          <hashTree/>
+          <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Validate HTTP and business result" enabled="true">
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="filename"/>
+            <stringProp name="parameters"/>
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="script"><![CDATA[
+import groovy.json.JsonSlurper
+
+def categorize = { String category, String businessCode ->
+    vars.put('responseCategory', category)
+    vars.put('businessCode', businessCode ?: '')
+}
+def fail = { String message ->
+    AssertionResult.setFailure(true)
+    AssertionResult.setFailureMessage(message)
+}
+
+categorize('TECHNICAL_ERROR', '')
+vars.put('seckillOrderNo', '')
+vars.put('agentMode', '')
+if (!prev.isSuccessful()) {
+    fail("HTTP ${prev.getResponseCode()}: ${prev.getResponseMessage()}")
+    return
+}
+
+def responseText = prev.getResponseDataAsString()
+if (responseText == null || responseText.trim().isEmpty()) {
+    fail('Empty response body')
+    return
+}
+
+try {
+    def json = new JsonSlurper().parseText(responseText)
+    def mode = vars.get('responseMode')
+    if (mode == 'wrapped') {
+        if (!(json instanceof Map)) {
+            fail('Business response must be a JSON object')
+            return
+        }
+        def code = String.valueOf(json.code)
+        if (code == '200') {
+            if (vars.get('scenarioName')?.startsWith('seckill_')
+                    && json.data instanceof Map && json.data.orderNo != null) {
+                vars.put('seckillOrderNo', String.valueOf(json.data.orderNo))
+            }
+            categorize('SUCCESS', code)
+            return
+        }
+        if (vars.get('scenarioName') == 'seckill_submit' && code == '237') {
+            categorize('BUSINESS_REJECTED', code)
+            return
+        }
+        if (vars.get('scenarioName') == 'seckill_user_limit' && code == '239') {
+            categorize('BUSINESS_REJECTED', code)
+            return
+        }
+        categorize('BUSINESS_ERROR', code)
+        fail("Business response is not successful: code=${json.code}, message=${json.message}")
+        return
+    }
+    if (!(json instanceof Map)) {
+        fail('Agent response must be a JSON object')
+        return
+    }
+    if (json.code != null) {
+        categorize('BUSINESS_ERROR', String.valueOf(json.code))
+        fail("Agent request was rejected: code=${json.code}, message=${json.message}")
+        return
+    }
+    if (mode == 'agent_search' && !(json.products instanceof List)) {
+        fail('Agent search response is missing products')
+        return
+    }
+    if (mode == 'agent_chat'
+            && (!(json.answer instanceof String) || json.answer.trim().isEmpty())) {
+        fail('Agent chat response is missing answer')
+        return
+    }
+    if (mode == 'agent_chat' && json.mode != null) {
+        vars.put('agentMode', String.valueOf(json.mode))
+    }
+    categorize('SUCCESS', '')
+} catch (Exception exception) {
+    fail("Invalid JSON response: ${exception.message}")
+}
+]]></stringProp>
+          </JSR223Assertion>
+          <hashTree/>
+        </hashTree>
+        <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Optional think time" enabled="true">
+          <stringProp name="ConstantTimer.delay">${__P(thinkTimeMs,0)}</stringProp>
+        </ConstantTimer>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

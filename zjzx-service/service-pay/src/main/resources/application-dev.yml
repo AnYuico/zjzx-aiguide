@@ -1,0 +1,74 @@
+server:
+  address: "${SERVICE_BIND_ADDRESS:127.0.0.1}"
+  port: 8515
+
+spring:
+  config:
+    import: classpath:application-alipay.yml
+  application:
+    name: service-pay
+  cloud:
+    openfeign:
+      httpclient:
+        connection-timeout: "${FEIGN_CONNECTION_TIMEOUT_MS:2000}"
+        max-connections: "${FEIGN_MAX_CONNECTIONS:400}"
+        max-connections-per-route: "${FEIGN_MAX_CONNECTIONS_PER_ROUTE:200}"
+        time-to-live: "${FEIGN_CONNECTION_TTL_SECONDS:300}"
+        time-to-live-unit: SECONDS
+        hc5:
+          enabled: true
+          connection-request-timeout: "${FEIGN_POOL_WAIT_TIMEOUT_SECONDS:2}"
+          connection-request-timeout-unit: SECONDS
+          socket-timeout: "${FEIGN_SOCKET_TIMEOUT_SECONDS:5}"
+          socket-timeout-unit: SECONDS
+    nacos:
+      config:
+        import-check:
+          enabled: false
+      discovery:
+        ip: "${SERVICE_DISCOVERY_IP:127.0.0.1}"
+        server-addr: "${NACOS_SERVER_ADDR:127.0.0.1:8848}"
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: "jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:db_zjzx}?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true"
+    username: "${MYSQL_USERNAME:root}"
+    password: "${MYSQL_PASSWORD}"
+  data:
+    redis:
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD}"
+  rabbitmq:
+    host: "${RABBITMQ_HOST:127.0.0.1}"
+    port: "${RABBITMQ_PORT:5672}"
+    username: "${RABBITMQ_USERNAME}"
+    password: "${RABBITMQ_PASSWORD}"
+    virtual-host: "${RABBITMQ_VHOST:/}"
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+
+mybatis:
+  config-location: classpath:mybatis-config.xml
+  mapper-locations: classpath:mapper/*/*.xml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: "${spring.application.name}"
+
+zjzx:
+  internal-api:
+    token: "${ZJZX_INTERNAL_API_TOKEN}"
+  mq:
+    outbox:
+      enabled: true

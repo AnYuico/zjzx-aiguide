@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.product.mapper.SeckillSkuMapper">
+
+    <resultMap id="seckillSkuMap"
+               type="com.tzp.zjzx.model.entity.seckill.SeckillSku"
+               autoMapping="true"/>
+
+    <sql id="columns">
+        id, activity_id, sku_id, seckill_price, total_stock,
+        available_stock, limit_per_user, status,
+        create_time, update_time, is_deleted
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into seckill_sku (
+            activity_id, sku_id, seckill_price, total_stock,
+            available_stock, limit_per_user, status,
+            create_time, update_time, is_deleted
+        ) values (
+            #{activityId}, #{skuId}, #{seckillPrice}, #{totalStock},
+            #{availableStock}, #{limitPerUser}, #{status},
+            now(), now(), 0
+        )
+    </insert>
+
+    <select id="selectById" resultMap="seckillSkuMap">
+        select <include refid="columns"/>
+        from seckill_sku
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <select id="selectByActivityAndSku" resultMap="seckillSkuMap">
+        select <include refid="columns"/>
+        from seckill_sku
+        where activity_id = #{activityId}
+          and sku_id = #{skuId}
+          and is_deleted = 0
+    </select>
+
+    <select id="findByActivityId" resultMap="seckillSkuMap">
+        select <include refid="columns"/>
+        from seckill_sku
+        where activity_id = #{activityId}
+          and is_deleted = 0
+        order by sku_id
+    </select>
+
+    <select id="findActiveByActivityId" resultMap="seckillSkuMap">
+        select <include refid="columns"/>
+        from seckill_sku
+        where activity_id = #{activityId}
+          and status = 1
+          and is_deleted = 0
+        order by sku_id
+    </select>
+
+    <delete id="deleteDraftByActivityId">
+        delete from seckill_sku
+        where activity_id = #{activityId}
+          and status = 0
+    </delete>
+
+    <update id="updateStatusByActivity">
+        update seckill_sku
+        set status = #{targetStatus}, update_time = now()
+        where activity_id = #{activityId}
+          and status = #{expectedStatus}
+          and is_deleted = 0
+    </update>
+
+    <select id="countOutstandingRequests" resultType="int">
+        select count(1)
+        from seckill_order_request
+        where activity_id = #{activityId}
+          and status in (0, 1)
+          and is_deleted = 0
+    </select>
+</mapper>

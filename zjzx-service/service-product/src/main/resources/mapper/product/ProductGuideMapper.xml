@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.product.mapper.ProductGuideMapper">
+
+    <resultMap id="productGuideVoMap" type="com.tzp.zjzx.ai.contract.vo.ProductGuideVo">
+        <id property="skuId" column="sku_id"/>
+        <result property="productName" column="product_name"/>
+        <result property="skuName" column="sku_name"/>
+        <result property="thumbImg" column="thumb_img"/>
+        <result property="salePrice" column="sale_price"/>
+        <result property="marketPrice" column="market_price"/>
+        <result property="skuSpec" column="sku_spec"/>
+        <result property="unitName" column="unit_name"/>
+        <result property="inStock" column="in_stock"/>
+    </resultMap>
+
+    <resultMap id="productKnowledgeDocumentVoMap"
+               type="com.tzp.zjzx.ai.contract.vo.ProductKnowledgeDocumentVo">
+        <id property="skuId" column="sku_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="brandId" column="brand_id"/>
+        <result property="productName" column="product_name"/>
+        <result property="skuName" column="sku_name"/>
+        <result property="brandName" column="brand_name"/>
+        <result property="categoryPath" column="category_path"/>
+        <result property="productSpec" column="product_spec"/>
+        <result property="skuSpec" column="sku_spec"/>
+        <result property="unitName" column="unit_name"/>
+        <result property="updatedAt" column="knowledge_updated_at"/>
+    </resultMap>
+
+    <sql id="guideColumns">
+        sku.id as sku_id,
+        p.name as product_name,
+        sku.sku_name,
+        sku.thumb_img,
+        sku.sale_price,
+        sku.market_price,
+        sku.sku_spec,
+        p.unit_name,
+        case when sku.stock_num &gt; 0 then 1 else 0 end as in_stock
+    </sql>
+
+    <select id="search" resultMap="productGuideVoMap">
+        select <include refid="guideColumns"/>
+        from product_sku sku
+        inner join product p on p.id = sku.product_id
+        where sku.status = 1
+          and sku.is_deleted = 0
+          and p.status = 1
+          and p.audit_status = 1
+          and p.is_deleted = 0
+        <if test="keyword != null and keyword != ''">
+          and (p.name like concat('%', #{keyword}, '%')
+               or sku.sku_name like concat('%', #{keyword}, '%'))
+        </if>
+        order by sku.sale_num desc, sku.id asc
+        limit #{limit}
+    </select>
+
+    <select id="getBySkuId" resultMap="productGuideVoMap">
+        select <include refid="guideColumns"/>
+        from product_sku sku
+        inner join product p on p.id = sku.product_id
+        where sku.id = #{skuId}
+          and sku.status = 1
+          and sku.is_deleted = 0
+          and p.status = 1
+          and p.audit_status = 1
+          and p.is_deleted = 0
+    </select>
+
+    <select id="findKnowledgePage" resultMap="productKnowledgeDocumentVoMap">
+        select
+            sku.id as sku_id,
+            p.id as product_id,
+            p.category3_id as category_id,
+            p.brand_id,
+            p.name as product_name,
+            sku.sku_name,
+            b.name as brand_name,
+            concat_ws(' &gt; ', c1.name, c2.name, c3.name) as category_path,
+            p.spec_value as product_spec,
+            sku.sku_spec,
+            p.unit_name,
+            greatest(p.update_time, sku.update_time) as knowledge_updated_at
+        from product_sku sku
+        inner join product p on p.id = sku.product_id
+        left join brand b on b.id = p.brand_id and b.is_deleted = 0
+        left join category c1 on c1.id = p.category1_id and c1.is_deleted = 0
+        left join category c2 on c2.id = p.category2_id and c2.is_deleted = 0
+        left join category c3 on c3.id = p.category3_id and c3.is_deleted = 0
+        where sku.id &gt; #{afterSkuId}
+          and sku.status = 1
+          and sku.is_deleted = 0
+          and p.status = 1
+          and p.audit_status = 1
+          and p.is_deleted = 0
+        order by sku.id asc
+        limit #{limit}
+    </select>
+
+    <select id="findKnowledgeByProductId"
+            resultMap="productKnowledgeDocumentVoMap">
+        select
+            sku.id as sku_id,
+            p.id as product_id,
+            p.category3_id as category_id,
+            p.brand_id,
+            p.name as product_name,
+            sku.sku_name,
+            b.name as brand_name,
+            concat_ws(' &gt; ', c1.name, c2.name, c3.name) as category_path,
+            p.spec_value as product_spec,
+            sku.sku_spec,
+            p.unit_name,
+            greatest(p.update_time, sku.update_time) as knowledge_updated_at
+        from product_sku sku
+        inner join product p on p.id = sku.product_id
+        left join brand b on b.id = p.brand_id and b.is_deleted = 0
+        left join category c1 on c1.id = p.category1_id and c1.is_deleted = 0
+        left join category c2 on c2.id = p.category2_id and c2.is_deleted = 0
+        left join category c3 on c3.id = p.category3_id and c3.is_deleted = 0
+        where p.id = #{productId}
+          and sku.status = 1
+          and sku.is_deleted = 0
+          and p.status = 1
+          and p.audit_status = 1
+          and p.is_deleted = 0
+        order by sku.id asc
+    </select>
+
+</mapper>

@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.order.mapper.OrderInfoMapper">
+    <resultMap id="orderInfoMap" type="com.tzp.zjzx.model.entity.order.OrderInfo" autoMapping="true">
+    </resultMap>
+
+    <!-- 用于select查询公用抽取的列 -->
+    <sql id="columns">
+        id,user_id,nick_name,order_no,request_id,order_source,coupon_id,total_amount,coupon_amount,original_total_amount,feight_fee,pay_type,order_status,receiver_name,receiver_phone,receiver_tag_name,receiver_province,receiver_city,receiver_district,receiver_address,payment_time,expire_time,delivery_time,receive_time,remark,cancel_time,cancel_reason,create_time,update_time,is_deleted,user_deleted
+    </sql>
+
+    <!-- 添加-->
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        insert into order_info (
+            id,
+            user_id,
+            nick_name,
+            order_no,
+            request_id,
+            order_source,
+            coupon_id,
+            total_amount,
+            coupon_amount,
+            original_total_amount,
+            feight_fee,
+            pay_type,
+            order_status,
+            receiver_name,
+            receiver_phone,
+            receiver_tag_name,
+            receiver_province,
+            receiver_city,
+            receiver_district,
+            receiver_address,
+            payment_time,
+            expire_time,
+            delivery_time,
+            receive_time,
+            remark,
+            cancel_time,
+            cancel_reason
+        ) values (
+                     #{id},
+                     #{userId},
+                     #{nickName},
+                     #{orderNo},
+                     #{requestId},
+                     #{orderSource},
+                     #{couponId},
+                     #{totalAmount},
+                     #{couponAmount},
+                     #{originalTotalAmount},
+                     #{feightFee},
+                     #{payType},
+                     #{orderStatus},
+                     #{receiverName},
+                     #{receiverPhone},
+                     #{receiverTagName},
+                     #{receiverProvince},
+                     #{receiverCity},
+                     #{receiverDistrict},
+                     #{receiverAddress},
+                     #{paymentTime},
+                     #{expireTime},
+                     #{deliveryTime},
+                     #{receiveTime},
+                     #{remark},
+                     #{cancelTime},
+                     #{cancelReason}
+                 )
+    </insert>
+
+    <!-- 更新订单状态-->
+    <update id="updateById">
+        update order_info set
+        <if test="userId != null and userId != ''">
+            user_id = #{userId},
+        </if>
+        <if test="nickName != null and nickName != ''">
+            nick_name = #{nickName},
+        </if>
+        <if test="orderNo != null and orderNo != ''">
+            order_no = #{orderNo},
+        </if>
+        <if test="requestId != null and requestId != ''">
+            request_id = #{requestId},
+        </if>
+        <if test="orderSource != null">
+            order_source = #{orderSource},
+        </if>
+        <if test="couponId != null and couponId != ''">
+            coupon_id = #{couponId},
+        </if>
+        <if test="totalAmount != null and totalAmount != ''">
+            total_amount = #{totalAmount},
+        </if>
+        <if test="couponAmount != null and couponAmount != ''">
+            coupon_amount = #{couponAmount},
+        </if>
+        <if test="originalTotalAmount != null and originalTotalAmount != ''">
+            original_total_amount = #{originalTotalAmount},
+        </if>
+        <if test="feightFee != null and feightFee != ''">
+            feight_fee = #{feightFee},
+        </if>
+        <if test="payType != null">
+            pay_type = #{payType},
+        </if>
+        <if test="orderStatus != null">
+            order_status = #{orderStatus},
+        </if>
+        <if test="receiverName != null and receiverName != ''">
+            receiver_name = #{receiverName},
+        </if>
+        <if test="receiverPhone != null and receiverPhone != ''">
+            receiver_phone = #{receiverPhone},
+        </if>
+        <if test="receiverTagName != null and receiverTagName != ''">
+            receiver_tag_name = #{receiverTagName},
+        </if>
+        <if test="receiverProvince != null and receiverProvince != ''">
+            receiver_province = #{receiverProvince},
+        </if>
+        <if test="receiverCity != null and receiverCity != ''">
+            receiver_city = #{receiverCity},
+        </if>
+        <if test="receiverDistrict != null and receiverDistrict != ''">
+            receiver_district = #{receiverDistrict},
+        </if>
+        <if test="receiverAddress != null and receiverAddress != ''">
+            receiver_address = #{receiverAddress},
+        </if>
+        <if test="paymentTime != null">
+            payment_time = #{paymentTime},
+        </if>
+        <if test="expireTime != null">
+            expire_time = #{expireTime},
+        </if>
+        <if test="deliveryTime != null">
+            delivery_time = #{deliveryTime},
+        </if>
+        <if test="receiveTime != null">
+            receive_time = #{receiveTime},
+        </if>
+        <if test="remark != null and remark != ''">
+            remark = #{remark},
+        </if>
+        <if test="cancelTime != null and cancelTime != ''">
+            cancel_time = #{cancelTime},
+        </if>
+        <if test="cancelReason != null and cancelReason != ''">
+            cancel_reason = #{cancelReason},
+        </if>
+        update_time =  now()
+        where
+        id = #{id}
+
+    </update>
+
+    <!-- 获取订单信息-->
+    <select id="getByIdAndUserId" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where id = #{orderId}
+          and user_id = #{userId}
+          and is_deleted = 0
+          and user_deleted = 0
+    </select>
+
+    <!-- 分页查询订单信息-->
+    <select id="findUserPage" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        <where>
+            user_id = #{userId}
+            <if test="orderStatus != null">
+                and order_status = #{orderStatus}
+            </if>
+            and is_deleted = 0
+            and user_deleted = 0
+        </where>
+        order by id desc
+    </select>
+
+    <select id="findAgentRecentOrders" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where user_id = #{userId}
+          and is_deleted = 0
+          and user_deleted = 0
+        <if test="orderStatus != null">
+          and order_status = #{orderStatus}
+        </if>
+        order by id desc
+        limit #{limit}
+    </select>
+
+    <!-- 根据订单号查询订单信息-->
+    <select id="getByOrderNo" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where order_no = #{orderNo}
+          and is_deleted = 0
+    </select>
+
+    <select id="getByOrderNoAndUserId" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where order_no = #{orderNo}
+          and user_id = #{userId}
+          and is_deleted = 0
+          and user_deleted = 0
+    </select>
+
+    <select id="getByOrderNoAndUserIdIncludingDeleted" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where order_no = #{orderNo}
+          and user_id = #{userId}
+          and is_deleted = 0
+    </select>
+
+    <select id="getByRequestId" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where request_id = #{requestId}
+    </select>
+
+    <update id="markPaid">
+        update order_info
+        set order_status = 1,
+            pay_type = #{payType},
+            payment_time = #{paymentTime},
+            update_time = now()
+        where order_no = #{orderNo}
+          and order_status = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="closeExpired">
+        update order_info
+        set order_status = -1,
+            cancel_time = #{cancelTime},
+            cancel_reason = #{cancelReason},
+            update_time = now()
+        where order_no = #{orderNo}
+          and order_status = 0
+          and expire_time &lt;= now()
+          and is_deleted = 0
+    </update>
+
+    <update id="cancelPendingByUser">
+        update order_info
+        set order_status = -1,
+            cancel_time = #{cancelTime},
+            cancel_reason = #{cancelReason},
+            update_time = now()
+        where order_no = #{orderNo}
+          and user_id = #{userId}
+          and order_status = 0
+          and is_deleted = 0
+    </update>
+
+    <update id="hideByUser">
+        update order_info
+        set user_deleted = 1,
+            update_time = now()
+        where order_no = #{orderNo}
+          and user_id = #{userId}
+          and user_deleted = 0
+          and order_status in (#{cancelledStatus}, #{completedStatus})
+          and is_deleted = 0
+    </update>
+
+    <select id="findExpiredOrders" resultMap="orderInfoMap">
+        select <include refid="columns" />
+        from order_info
+        where order_status = 0
+          and expire_time &lt;= now()
+          and is_deleted = 0
+        order by expire_time, id
+        limit #{limit}
+    </select>
+
+</mapper>

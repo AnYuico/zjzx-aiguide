@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tzp.zjzx.order.mapper.SeckillOrderStockMapper">
+
+    <resultMap id="seckillSkuMap"
+               type="com.tzp.zjzx.model.entity.seckill.SeckillSku"
+               autoMapping="true"/>
+
+    <select id="selectSku" resultMap="seckillSkuMap">
+        select id, activity_id, sku_id, seckill_price, total_stock,
+               available_stock, limit_per_user, status,
+               create_time, update_time, is_deleted
+        from seckill_sku
+        where activity_id = #{activityId}
+          and id = #{seckillSkuId}
+          and sku_id = #{skuId}
+          and is_deleted = 0
+    </select>
+
+    <update id="decrement">
+        update seckill_sku
+        set available_stock = available_stock - 1,
+            update_time = now()
+        where activity_id = #{activityId}
+          and id = #{seckillSkuId}
+          and sku_id = #{skuId}
+          and status = 1
+          and available_stock &gt; 0
+          and is_deleted = 0
+    </update>
+
+    <update id="restore">
+        update seckill_sku
+        set available_stock = available_stock + 1,
+            update_time = now()
+        where id = #{seckillSkuId}
+          and available_stock &lt; total_stock
+          and is_deleted = 0
+    </update>
+</mapper>
+
